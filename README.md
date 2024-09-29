@@ -4,13 +4,13 @@
 
 ## Overview
 
-The Recipe Finder application allows users to effortlessly discover delicious recipes based on their chosen ingredients. Users can input any ingredient, and the application provides a variety of recipes complete with step-by-step instructions and nutritional information. 
+The Recipe Finder application allows users to effortlessly discover delicious recipes based on their chosen ingredients. Users can input any ingredient, and the application provides a variety of recipes instantly.
 
 ## Features
 
 - **Ingredient Search**: Input any ingredient to find related recipes.
 - **Optional Filters**: Users can filter recipes based on meal type and allergens.
-- **Recipe Display**: View recipes along with images, calories, servings, and ingredients.
+- **Recipe Display**: View recipes along with images, calories, servings, and ingredient count.
 - **Quick Access to Sources**: Click on recipe images to navigate directly to the source website for more details.
 
 ## Technologies Used
