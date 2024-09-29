@@ -37,7 +37,7 @@ col1, col2 = st.columns([10, 1])
 with col1:
     with st.expander("**Optional Filters**"):
         # Meal type filter
-        meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Lunch", "Dinner"])
+        meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Brunch", "Lunch", "Dinner", "Teatime"])
 
         # Allergen filter (e.g., exclude gluten, dairy, etc.)
         allergen_options = ["Gluten-Free", "Dairy-Free", "Peanut-Free", "Tree-Nut-Free", "Vegan", "Vegetarian"]
@@ -47,15 +47,9 @@ with col2:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-if 'page' not in st.session_state:
-    st.session_state.page = 1
-    st.session_state.from_ = 0
-    st.session_state.to = 20
-    st.session_state.next_link = None
-
 
 # Handle API Requests
-def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
+def load_recipes(ingredient, meal_type, selected_allergens):
     with st.spinner("Loading recipes..."):
         time.sleep(2)
 
@@ -66,21 +60,44 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
         health_labels = ",".join(selected_allergens).lower().replace("-", "")
         filters += f"&health={health_labels}"
 
-    # Use the next link if it exists; otherwise construct a new URL
-    if st.session_state.next_link:
-        url = st.session_state.next_link
-    else:
-        url = f"{BASE_URL}{RECIPE_URL}?type=public&q={ingredient}{filters}&app_id={RECIPE_APP_ID}&app_key={RECIPE_APP_KEY}&from={from_}&to={to_}"
+    # Construct the API request URL
+    url = f"{BASE_URL}{RECIPE_URL}?type=public&q={ingredient}&app_id={RECIPE_APP_ID}&app_key={RECIPE_APP_KEY}&random=true&from=0&to=20"
 
+    # Make the GET request
     response = requests.get(url)
 
     if response.status_code == 200:
         data = response.json()
-        if 'hits' in data and data['hits']:
-            display_from = from_ + 1
-            display_to = min(to_, data['count'])
 
-            st.subheader(f"Displaying: {display_from} - {display_to} recipes (out of {data['count']})")
+        if 'hits' in data and data['hits']:
+            # Button to refresh the recipes
+            refresh_button_html = """
+                <style>
+                div.stButton > button {
+                    background-color: #fc4c4c;
+                    color: white;
+                    border-radius: 16px;
+                    border: none;
+                    padding: 8px 16px;
+                    font-size: 16px;
+                    font-weight: bold;
+                    cursor: pointer;
+                }
+                div.stButton > button:hover {
+                    background-color: darkred;
+                }
+                </style>
+            """
+
+            st.markdown(refresh_button_html, unsafe_allow_html=True)
+
+            if st.button("Refresh Recipes", key=str(time.time())):  # Unique key generated using the current timestamp
+                if ingredient_name:
+                    load_recipes(ingredient_name, meal_type, selected_allergens)
+                else:
+                    st.warning("Please enter an ingredient first!")
+
+            st.subheader("Results: ")
             st.info("For more details, click on the images for direct source.")
             hits = data['hits']
 
@@ -92,6 +109,9 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
             num_ingredients_list = []
             sources = []
             servings = []
+            carbs = []
+            fats = []
+            protein = []
 
             for hit in hits:
                 recipe = hit['recipe']
@@ -101,6 +121,10 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 url = recipe.get('url', 'No url available')
                 source = recipe.get('source', 'No source available')
                 serving = recipe.get('yield', 'No yield available')
+                carb = recipe['totalNutrients']['CHOCDF']['quantity']
+                fat = recipe['totalNutrients']['FAT']['quantity']
+                protein_content = recipe['totalNutrients']['PROCNT']['quantity']
+
 
                 ingredients = recipe.get('ingredients', [])
                 num_ingredients = len(ingredients)
@@ -115,55 +139,43 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 num_ingredients_list.append(num_ingredients)
                 sources.append(source)
                 servings.append(serving)
+                carbs.append(carb)
+                fats.append(fat)
+                protein.append(protein_content)
 
             for i in range(0, len(images), 4):
                 cols = st.columns(4)
+
                 for idx, col in enumerate(cols):
                     if i + idx < len(images):
                         col.markdown(
                             f"""
-                            <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
-                                <h6 style='white-space: nowrap; font-weight: bold; margin: 0;' title='{labels[i + idx]}'>{truncated_labels[i + idx]}</h6>
-                                <div style='border: 2px solid white; padding: 2px;'>
-                                    <a href='{urls[i + idx]}' target='_blank'>
-                                        <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
-                                    </a>
-                                </div>
-                                <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
-                                <hr style='border: .5px solid white; margin: 2px 0;'>
-                                <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
-                                <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(servings[i + idx])}</span> Servings</p>
-                                <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
-                            </div>
-                            """,
+                               <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
+                                   <h6 style='white-space: nowrap; font-weight: bold; margin: 0;' title='{labels[i + idx]}'>{truncated_labels[i + idx]}</h6>
+                                   <div style='border: 2px solid white; padding: 2px;'>
+                                       <a href='{urls[i + idx]}' target='_blank'>
+                                           <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
+                                       </a>
+                                   </div>
+                                   <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
+                                   <hr style='border: .5px solid white; margin: 2px 0;'>
+                                   <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
+                                   <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(servings[i + idx])}</span> Servings</p>
+                                   <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
+                                     <hr style='border: .5px solid white; margin: 2px 0;'>
+                                   <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(carbs[i + idx])}</span>g of Carbs</p>
+                                   <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(fats[i + idx], 2)}</span>g of Fats</p>
+                                   <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(protein[i + idx], 2)}</span>g of Proteins</p>
+                                   <hr style='border: .5px solid white; margin: 2px 0;'>
+                               </div>   
+                               """,
                             unsafe_allow_html=True
                         )
                         col.write("")
 
-
                 st.markdown("<hr>", unsafe_allow_html=True)
                 st.write("")
 
-            # Check for next link
-            if "_links" in data and "next" in data["_links"]:
-                st.session_state.next_link = data["_links"]["next"]["href"]
-            else:
-                st.session_state.next_link = None  # Reset if no next link
-
-            # Navigation buttons
-            if st.session_state.page > 1:
-                if st.button("First page"):
-                    st.session_state.page -= 1
-                    st.session_state.from_ = 0
-                    st.session_state.to = 20
-                    st.session_state.next_link = None  # Reset next link on back
-                    st.rerun()  # Refresh to show new results
-            if st.session_state.next_link:
-                if st.button("Next"):
-                    st.session_state.page += 1
-                    st.session_state.from_ += 20
-                    st.session_state.to += 20
-                    st.rerun()  # Refresh to show new results
         else:
             st.error("No recipes found. Please write a valid input.")
     else:
@@ -171,4 +183,4 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
 
 
 if ingredient_name:
-    load_recipes(ingredient_name, meal_type, selected_allergens, st.session_state.from_, st.session_state.to)
+    load_recipes(ingredient_name, meal_type, selected_allergens)
