@@ -33,17 +33,17 @@ with col1:
 with col2:
     st.image("mag_glass.png", width=75)
 
-st.markdown("<hr>", unsafe_allow_html=True)
+col1, col2 = st.columns([10, 1])
+with col1:
+    with st.expander("**Optional Filters**"):
+        # Meal type filter
+        meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Lunch", "Dinner"])
 
-# Filters
-st.write("**Optional Filters:**")
-
-# Meal type filter
-meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Lunch", "Dinner"])
-
-# Allergen filter (e.g., exclude gluten, dairy, etc.)
-allergen_options = ["Gluten-Free", "Dairy-Free", "Peanut-Free", "Tree-Nut-Free", "Vegan", "Vegetarian"]
-selected_allergens = st.multiselect("Exclude recipes with these allergens", allergen_options)
+        # Allergen filter (e.g., exclude gluten, dairy, etc.)
+        allergen_options = ["Gluten-Free", "Dairy-Free", "Peanut-Free", "Tree-Nut-Free", "Vegan", "Vegetarian"]
+        selected_allergens = st.multiselect("Exclude recipes with these allergens", allergen_options)
+with col2:
+    st.write("")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -169,4 +169,3 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
 
 if ingredient_name:
     load_recipes(ingredient_name, meal_type, selected_allergens, st.session_state.from_, st.session_state.to)
-
