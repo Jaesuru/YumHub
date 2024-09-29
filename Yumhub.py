@@ -27,6 +27,7 @@ chat_input = st.sidebar.text_input("You: ", key="chat_input")
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 
+
 # Function to get AI response using the new API method
 def get_ai_response(user_input):
     response = openai.completions.create(
@@ -35,6 +36,7 @@ def get_ai_response(user_input):
         max_tokens=150
     )
     return response['choices'][0]['text'].strip()
+
 
 # Display chat interaction
 if chat_input:
@@ -66,6 +68,7 @@ with col1:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
+
 # Handle API Requests for recipes
 def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
     with st.spinner("Loading recipes..."):
@@ -96,5 +99,8 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
     else:
         st.write(f"Failed to retrieve recipes. Status Code: {response.status_code}")
 
+
 if ingredient_name:
-    load_recipes(ingredient_name, meal_type, selected_allergens, st.session_state.get('from_', 0), st.session_state.get('to_', 20))
+    load_recipes(ingredient_name, meal_type, selected_allergens, st.session_state.get('from_', 0),
+                 st.session_state.get('to_', 20))
+
