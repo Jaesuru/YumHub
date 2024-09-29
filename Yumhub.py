@@ -40,6 +40,7 @@ if 'page' not in st.session_state:
     st.session_state.page = 1
     st.session_state.from_ = 0
     st.session_state.to = 20
+    st.session_state.next_link = None  # Initialize the next link
 
 # Handle API Requests
 def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
@@ -53,7 +54,11 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
         health_labels = ",".join(selected_allergens).lower().replace("-", "")
         filters += f"&health={health_labels}"
 
-    url = f"{BASE_URL}{RECIPE_URL}?type=public&q={ingredient}{filters}&app_id={RECIPE_APP_ID}&app_key={RECIPE_APP_KEY}&from={from_}&to={to_}"
+    # Use the next link if it exists; otherwise construct a new URL
+    if st.session_state.next_link:
+        url = st.session_state.next_link
+    else:
+        url = f"{BASE_URL}{RECIPE_URL}?type=public&q={ingredient}{filters}&app_id={RECIPE_APP_ID}&app_key={RECIPE_APP_KEY}&from={from_}&to={to_}"
 
     response = requests.get(url)
     if response.status_code == 200:
@@ -108,15 +113,23 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                             """,
                             unsafe_allow_html=True
                         )
+
+            # Check for next link
+            if "_links" in data and "next" in data["_links"]:
+                st.session_state.next_link = data["_links"]["next"]["href"]
+            else:
+                st.session_state.next_link = None  # Reset if no next link
+
             # Navigation buttons
             st.markdown("<hr>", unsafe_allow_html=True)
-            if st.session_state.from_ > 0:
+            if st.session_state.page > 1:
                 if st.button("Back"):
                     st.session_state.page -= 1
                     st.session_state.from_ -= 20
                     st.session_state.to -= 20
+                    st.session_state.next_link = None  # Reset next link on back
                     st.rerun()  # Refresh to show new results
-            if st.session_state.to < data['count']:
+            if st.session_state.next_link:
                 if st.button("Next"):
                     st.session_state.page += 1
                     st.session_state.from_ += 20
