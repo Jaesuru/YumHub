@@ -81,6 +81,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
             display_to = min(to_, data['count'])
 
             st.subheader(f"Displaying: {display_from} - {display_to} recipes (out of {data['count']})")
+            st.info("For more details, click on the images for direct source.")
             hits = data['hits']
 
             images = []
@@ -121,22 +122,24 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                     if i + idx < len(images):
                         col.markdown(
                             f"""
-                                <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
-                                    <h6 style='white-space: nowrap; font-weight: bold; margin: 0;' title='{labels[i + idx]}'>{truncated_labels[i + idx]}</h6>
-                                    <div style='border: 2px solid white; padding: 2px;'>
+                            <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
+                                <h6 style='white-space: nowrap; font-weight: bold; margin: 0;' title='{labels[i + idx]}'>{truncated_labels[i + idx]}</h6>
+                                <div style='border: 2px solid white; padding: 2px;'>
+                                    <a href='{urls[i + idx]}' target='_blank'>
                                         <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
-                                    </div>
-                                    <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
-                                    <hr style='border: .5px solid white; margin: 2px 0;'>
-                                    <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
-                                    <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(servings[i + idx])}</span> Servings</p>
-                                    <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
+                                    </a>
                                 </div>
-                                """,
+                                <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
+                                <hr style='border: .5px solid white; margin: 2px 0;'>
+                                <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
+                                <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(servings[i + idx])}</span> Servings</p>
+                                <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
+                            </div>
+                            """,
                             unsafe_allow_html=True
-
                         )
                         col.write("")
+
 
                 st.markdown("<hr>", unsafe_allow_html=True)
                 st.write("")
