@@ -42,6 +42,7 @@ if 'page' not in st.session_state:
     st.session_state.to = 20
     st.session_state.next_link = None  # Initialize the next link
 
+
 # Handle API Requests
 def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
     with st.spinner("Loading recipes..."):
@@ -70,7 +71,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
 
             st.subheader(f"Displaying {display_from} - {display_to} recipes (out of {data['count']})")
             hits = data['hits']
-            images, labels, calories, urls, num_ingredients_list, sources, total_weights = [], [], [], [], [], [], []
+            images, labels, calories, urls, num_ingredients_list, sources, total_weights, servings = [], [], [], [], [], [], [], []
 
             for hit in hits:
                 recipe = hit['recipe']
@@ -80,6 +81,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 url = recipe.get('url', 'No url available')
                 source = recipe.get('source', 'No source available')
                 total_weight = recipe.get('totalWeight', 'N/A')
+                serving_size = recipe.get('yield', 'N/A')
 
                 ingredients = recipe.get('ingredients', [])
                 num_ingredients = len(ingredients)
@@ -93,6 +95,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 num_ingredients_list.append(num_ingredients)
                 sources.append(source)
                 total_weights.append(total_weight)
+                servings.append(serving_size)
 
             for i in range(0, len(images), 4):
                 cols = st.columns(4)
@@ -106,7 +109,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                                     <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
                                 </div>
                                 <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
-                                <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(total_weights[i + idx], 2)}</span> Grams</p>
+                                <p style='margin: 5px 0 0; font-size: 16px;'>Serving Size:<span style='color: #fc4c4c;'> {servings[i + idx]}</p>
                                 <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
                                 <p style='margin: 5px 0 0; font-size: 14px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
                             </div>
@@ -139,6 +142,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
             st.error("No recipes found. Please write a valid input.")
     else:
         st.write(f"Failed to retrieve recipes. Status Code: {response.status_code}")
+
 
 if ingredient_name:
     load_recipes(ingredient_name, meal_type, selected_allergens, st.session_state.from_, st.session_state.to)
