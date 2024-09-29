@@ -123,10 +123,10 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
             # Navigation buttons
             st.markdown("<hr>", unsafe_allow_html=True)
             if st.session_state.page > 1:
-                if st.button("Back"):
+                if st.button("First page"):
                     st.session_state.page -= 1
-                    st.session_state.from_ -= 20
-                    st.session_state.to -= 20
+                    st.session_state.from_ = 0
+                    st.session_state.to = 20
                     st.session_state.next_link = None  # Reset next link on back
                     st.rerun()  # Refresh to show new results
             if st.session_state.next_link:
