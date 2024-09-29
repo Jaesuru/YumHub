@@ -11,8 +11,12 @@ RECIPE_URL = 'api/recipes/v2'
 # Introduction
 st.image("YumHub_logo.png", caption="", width=750)
 st.markdown("<hr>", unsafe_allow_html=True)
-st.subheader("Effortless recipes right at your fingertips.")
-st.write("Discover delicious recipes by inputting any ingredient and applying filters for meal type and allergens.")
+st.subheader("Effortlessly find recipes right at your fingertips")
+st.write("")
+st.write(
+    "Discover delicious recipes by inputting any ingredient. Instantly receive recipe ideas, "
+    "step-by-step instructions, and nutritional information, all in one place! "
+)
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # Search Box
@@ -23,24 +27,25 @@ with col1:
 with col2:
     st.image("mag_glass.png", width=75)
 
-# Filters
-st.write("**Optional Filters:**")
+col1, col2 = st.columns([10, 1])
+with col1:
+    with st.expander("**Optional Filters**"):
+        # Meal type filter
+        meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Lunch", "Dinner"])
 
-# Meal type filter
-meal_type = st.selectbox("Select meal type", ["Any", "Breakfast", "Lunch", "Dinner"])
-
-# Allergen filter (e.g., exclude gluten, dairy, etc.)
-allergen_options = ["Gluten-Free", "Dairy-Free", "Peanut-Free", "Tree-Nut-Free", "Vegan", "Vegetarian"]
-selected_allergens = st.multiselect("Exclude recipes with these allergens", allergen_options)
+        # Allergen filter (e.g., exclude gluten, dairy, etc.)
+        allergen_options = ["Gluten-Free", "Dairy-Free", "Peanut-Free", "Tree-Nut-Free", "Vegan", "Vegetarian"]
+        selected_allergens = st.multiselect("Exclude recipes with these allergens", allergen_options)
+with col2:
+    st.write("")
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# Initialize session state for pagination
 if 'page' not in st.session_state:
     st.session_state.page = 1
     st.session_state.from_ = 0
     st.session_state.to = 20
-    st.session_state.next_link = None  # Initialize the next link
+    st.session_state.next_link = None
 
 
 # Handle API Requests
@@ -62,16 +67,24 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
         url = f"{BASE_URL}{RECIPE_URL}?type=public&q={ingredient}{filters}&app_id={RECIPE_APP_ID}&app_key={RECIPE_APP_KEY}&from={from_}&to={to_}"
 
     response = requests.get(url)
+
     if response.status_code == 200:
         data = response.json()
         if 'hits' in data and data['hits']:
-            # Correct the range displayed
             display_from = from_ + 1
             display_to = min(to_, data['count'])
 
-            st.subheader(f"Displaying {display_from} - {display_to} recipes (out of {data['count']})")
+            st.subheader(f"Displaying: {display_from} - {display_to} recipes (out of {data['count']})")
             hits = data['hits']
-            images, labels, calories, urls, num_ingredients_list, sources, total_weights, servings = [], [], [], [], [], [], [], []
+
+            images = []
+            labels = []
+            truncated_labels = []
+            calories = []
+            urls = []
+            num_ingredients_list = []
+            sources = []
+            servings = []
 
             for hit in hits:
                 recipe = hit['recipe']
@@ -80,8 +93,7 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 calorie = recipe.get('calories', 'No calories available')
                 url = recipe.get('url', 'No url available')
                 source = recipe.get('source', 'No source available')
-                total_weight = recipe.get('totalWeight', 'N/A')
-                serving_size = recipe.get('yield', 'N/A')
+                serving = recipe.get('yield', 'No yield available')
 
                 ingredients = recipe.get('ingredients', [])
                 num_ingredients = len(ingredients)
@@ -89,13 +101,13 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 truncated_label = label if len(label) <= 17 else label[:17] + '...'
 
                 images.append(image)
-                labels.append(truncated_label)
+                labels.append(label)
+                truncated_labels.append(truncated_label)
                 calories.append(calorie)
                 urls.append(url)
                 num_ingredients_list.append(num_ingredients)
                 sources.append(source)
-                total_weights.append(total_weight)
-                servings.append(serving_size)
+                servings.append(serving)
 
             for i in range(0, len(images), 4):
                 cols = st.columns(4)
@@ -103,19 +115,25 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                     if i + idx < len(images):
                         col.markdown(
                             f"""
-                            <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
-                                <h6 style='white-space: nowrap; font-weight: bold; margin: 0;'>{labels[i + idx]}</h6>
-                                <div style='border: 2px solid white; padding: 2px;'>
-                                    <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
+                                <div style='background-color: #282434; padding: 10px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);'>
+                                    <h6 style='white-space: nowrap; font-weight: bold; margin: 0;' title='{labels[i + idx]}'>{truncated_labels[i + idx]}</h6>
+                                    <div style='border: 2px solid white; padding: 2px;'>
+                                        <img src='{images[i + idx]}' title='Url: {urls[i + idx]}' style='width: 100%; height: auto;'/>
+                                    </div>
+                                    <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
+                                    <hr style='border: .5px solid white; margin: 2px 0;'>
+                                    <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
+                                    <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{round(servings[i + idx])}</span> Servings</p>
+                                    <p style='margin: 5px 0 0; font-size: 15px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
                                 </div>
-                                <p style='text-align: center; font-size: 10px;'>Source: {sources[i + idx]}</p>
-                                <p style='margin: 5px 0 0; font-size: 16px;'>Serving Size:<span style='color: #fc4c4c;'> {servings[i + idx]}</p>
-                                <p style='margin: 5px 0 0; font-size: 16px;'><span style='color: #fc4c4c;'>{round(calories[i + idx])}</span> Calories</p>
-                                <p style='margin: 5px 0 0; font-size: 14px;'><span style='color: #fc4c4c;'>{num_ingredients_list[i + idx]}</span> Ingredients</p>
-                            </div>
-                            """,
+                                """,
                             unsafe_allow_html=True
+
                         )
+                        col.write("")
+
+                st.markdown("<hr>", unsafe_allow_html=True)
+                st.write("")
 
             # Check for next link
             if "_links" in data and "next" in data["_links"]:
@@ -124,7 +142,6 @@ def load_recipes(ingredient, meal_type, selected_allergens, from_, to_):
                 st.session_state.next_link = None  # Reset if no next link
 
             # Navigation buttons
-            st.markdown("<hr>", unsafe_allow_html=True)
             if st.session_state.page > 1:
                 if st.button("First page"):
                     st.session_state.page -= 1
